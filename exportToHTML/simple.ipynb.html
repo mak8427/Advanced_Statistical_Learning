@@ -1,0 +1,361 @@
+<html>
+<head>
+<title>simple.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #7a7e85;}
+.s1 { color: #bcbec4;}
+.s2 { color: #cf8e6d;}
+.s3 { color: #bcbec4;}
+.s4 { color: #2aacb8;}
+.s5 { color: #6aab73;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+simple.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+</span><span class="s1">#Maximum likelihood estimates and Fisher’s information 
+</span><span class="s0">#%% md 
+</span><span class="s1">## Problem 1: Simulate Data and Analyze Using Linear Regression 
+ 
+### Problem Description   
+Simulate data according to the model: 
+ 
+y=2x+ϵ 
+ 
+where \( x \) and \( \epsilon \) are drawn from a normal distribution using `numpy`. Visualize the data and fit a linear regression model using `scikit-learn`. Finally, save your scatter plot with the regression line as a PDF. 
+ 
+ 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">matplotlib</span><span class="s3">.</span><span class="s1">pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">linear_model </span><span class="s2">import </span><span class="s1">LinearRegression</span>
+
+<span class="s0"># Set random seed for reproducibility</span>
+<span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">seed</span><span class="s3">(</span><span class="s4">42</span><span class="s3">)</span>
+
+<span class="s0"># Simulate predictor variable x and error term epsilon</span>
+<span class="s1">n_samples </span><span class="s3">= </span><span class="s4">100</span>
+<span class="s1">x </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">normal</span><span class="s3">(</span><span class="s1">loc</span><span class="s3">=</span><span class="s4">0</span><span class="s3">, </span><span class="s1">scale</span><span class="s3">=</span><span class="s4">1</span><span class="s3">, </span><span class="s1">size</span><span class="s3">=</span><span class="s1">n_samples</span><span class="s3">)</span>
+<span class="s1">epsilon </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">normal</span><span class="s3">(</span><span class="s1">loc</span><span class="s3">=</span><span class="s4">0</span><span class="s3">, </span><span class="s1">scale</span><span class="s3">=</span><span class="s4">1</span><span class="s3">, </span><span class="s1">size</span><span class="s3">=</span><span class="s1">n_samples</span><span class="s3">)</span>
+
+<span class="s0"># Compute response variable y</span>
+<span class="s1">y </span><span class="s3">= </span><span class="s4">2 </span><span class="s3">* </span><span class="s1">x </span><span class="s3">+ </span><span class="s1">epsilon</span>
+
+<span class="s0"># Visualize the distributions of x and y</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s4">12</span><span class="s3">, </span><span class="s4">5</span><span class="s3">))</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">subplot</span><span class="s3">(</span><span class="s4">1</span><span class="s3">, </span><span class="s4">2</span><span class="s3">, </span><span class="s4">1</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">hist</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">bins</span><span class="s3">=</span><span class="s4">20</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s5">'skyblue'</span><span class="s3">, </span><span class="s1">edgecolor</span><span class="s3">=</span><span class="s5">'black'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s5">'Histogram of x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s5">'x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s5">'Frequency'</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">subplot</span><span class="s3">(</span><span class="s4">1</span><span class="s3">, </span><span class="s4">2</span><span class="s3">, </span><span class="s4">2</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">hist</span><span class="s3">(</span><span class="s1">y</span><span class="s3">, </span><span class="s1">bins</span><span class="s3">=</span><span class="s4">20</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s5">'salmon'</span><span class="s3">, </span><span class="s1">edgecolor</span><span class="s3">=</span><span class="s5">'black'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s5">'Histogram of y'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s5">'y'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s5">'Frequency'</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">tight_layout</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+
+<span class="s0"># Scatter plot of x vs y</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s4">8</span><span class="s3">, </span><span class="s4">6</span><span class="s3">))</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">y</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s5">'blue'</span><span class="s3">, </span><span class="s1">alpha</span><span class="s3">=</span><span class="s4">0.6</span><span class="s3">, </span><span class="s1">label</span><span class="s3">=</span><span class="s5">'Data points'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s5">'Scatter Plot of y vs x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s5">'x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s5">'y'</span><span class="s3">)</span>
+
+<span class="s0"># Reshape x for sklearn</span>
+<span class="s1">x_reshaped </span><span class="s3">= </span><span class="s1">x</span><span class="s3">.</span><span class="s1">reshape</span><span class="s3">(-</span><span class="s4">1</span><span class="s3">, </span><span class="s4">1</span><span class="s3">)</span>
+
+<span class="s0"># Fit a linear regression model</span>
+<span class="s1">model </span><span class="s3">= </span><span class="s1">LinearRegression</span><span class="s3">()</span>
+<span class="s1">model</span><span class="s3">.</span><span class="s1">fit</span><span class="s3">(</span><span class="s1">x_reshaped</span><span class="s3">, </span><span class="s1">y</span><span class="s3">)</span>
+<span class="s1">y_pred </span><span class="s3">= </span><span class="s1">model</span><span class="s3">.</span><span class="s1">predict</span><span class="s3">(</span><span class="s1">x_reshaped</span><span class="s3">)</span>
+
+<span class="s0"># Add regression line to the scatter plot</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">plot</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">y_pred</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s5">'red'</span><span class="s3">, </span><span class="s1">linewidth</span><span class="s3">=</span><span class="s4">2</span><span class="s3">, </span><span class="s1">label</span><span class="s3">=</span><span class="s5">'Regression line'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## Problem 2: Implement the MLE for the Univariate Normal Distribution 
+ 
+### Problem Description   
+The univariate normal distribution is given by: 
+ 
+\\[ 
+f(x|\\mu, \\sigma) = \\frac{1}{\\sqrt{2\\pi\\sigma^2}} \\exp\\left( -\\frac{(x - \\mu)^2}{2\\sigma^2} \\right) 
+\\] 
+ 
+- Implement a function to evaluate this density function. 
+- Verify that the integral over the entire range equals 1. 
+- Implement MLE to estimate \\( \\mu \\) and \\( \\sigma \\) from data. 
+ 
+### Implementation   
+*See the code cell below for implementation.* 
+</span><span class="s0">#%% 
+# Import necessary libraries</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">matplotlib</span><span class="s3">.</span><span class="s1">pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">integrate </span><span class="s2">import </span><span class="s1">quad</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">optimize </span><span class="s2">import </span><span class="s1">minimize</span>
+
+<span class="s0"># Define the normal distribution density function</span>
+<span class="s2">def </span><span class="s1">norm_den</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">):</span>
+    <span class="s1">coeff </span><span class="s3">= </span><span class="s4">1 </span><span class="s3">/ (</span><span class="s1">np</span><span class="s3">.</span><span class="s1">sqrt</span><span class="s3">(</span><span class="s4">2 </span><span class="s3">* </span><span class="s1">np</span><span class="s3">.</span><span class="s1">pi </span><span class="s3">* </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2</span><span class="s3">))</span>
+    <span class="s1">exponent </span><span class="s3">= -((</span><span class="s1">x </span><span class="s3">- </span><span class="s1">mu</span><span class="s3">)**</span><span class="s4">2</span><span class="s3">) / (</span><span class="s4">2 </span><span class="s3">* </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2</span><span class="s3">)</span>
+    <span class="s2">return </span><span class="s1">coeff </span><span class="s3">* </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s1">exponent</span><span class="s3">)</span>
+
+<span class="s0"># Visualize the function for selected mu and sigma</span>
+<span class="s1">x_values </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">linspace</span><span class="s3">(-</span><span class="s4">10</span><span class="s3">, </span><span class="s4">10</span><span class="s3">, </span><span class="s4">400</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s4">8</span><span class="s3">, </span><span class="s4">6</span><span class="s3">))</span>
+<span class="s2">for </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma </span><span class="s2">in </span><span class="s3">[(-</span><span class="s4">2</span><span class="s3">, </span><span class="s4">1</span><span class="s3">), (</span><span class="s4">0</span><span class="s3">, </span><span class="s4">2</span><span class="s3">), (</span><span class="s4">2</span><span class="s3">, </span><span class="s4">1</span><span class="s3">)]:</span>
+    <span class="s1">y_values </span><span class="s3">= </span><span class="s1">norm_den</span><span class="s3">(</span><span class="s1">x_values</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">)</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">plot</span><span class="s3">(</span><span class="s1">x_values</span><span class="s3">, </span><span class="s1">y_values</span><span class="s3">, </span><span class="s1">label</span><span class="s3">=</span><span class="s5">f'μ=</span><span class="s2">{</span><span class="s1">mu</span><span class="s2">}</span><span class="s5">, σ=</span><span class="s2">{</span><span class="s1">sigma</span><span class="s2">}</span><span class="s5">'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s5">'Normal Distribution Density Functions'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s5">'x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s5">'f(x)'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+
+<span class="s0"># Verify numerically that the integral over all x equals 1</span>
+<span class="s1">result</span><span class="s3">, </span><span class="s1">error </span><span class="s3">= </span><span class="s1">quad</span><span class="s3">(</span><span class="s1">norm_den</span><span class="s3">, -</span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span><span class="s3">, </span><span class="s1">args</span><span class="s3">=(</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">))</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Integral over all x: </span><span class="s2">{</span><span class="s1">result</span><span class="s2">:</span><span class="s5">.5f</span><span class="s2">}</span><span class="s5">, Error estimate: </span><span class="s2">{</span><span class="s1">error</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Implement MLE to estimate mu and sigma</span>
+<span class="s2">def </span><span class="s1">negative_log_likelihood</span><span class="s3">(</span><span class="s1">params</span><span class="s3">, </span><span class="s1">data</span><span class="s3">):</span>
+    <span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma </span><span class="s3">= </span><span class="s1">params</span><span class="s3">[</span><span class="s4">0</span><span class="s3">], </span><span class="s1">params</span><span class="s3">[</span><span class="s4">1</span><span class="s3">]</span>
+    <span class="s0"># To ensure sigma &gt; 0</span>
+    <span class="s2">if </span><span class="s1">sigma </span><span class="s3">&lt;= </span><span class="s4">0</span><span class="s3">:</span>
+        <span class="s2">return </span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span>
+    <span class="s1">nll </span><span class="s3">= -</span><span class="s1">np</span><span class="s3">.</span><span class="s1">sum</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">log</span><span class="s3">(</span><span class="s1">norm_den</span><span class="s3">(</span><span class="s1">data</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">)))</span>
+    <span class="s2">return </span><span class="s1">nll</span>
+
+<span class="s0"># Simulate data</span>
+<span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">seed</span><span class="s3">(</span><span class="s4">0</span><span class="s3">)</span>
+<span class="s1">data </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">normal</span><span class="s3">(</span><span class="s1">loc</span><span class="s3">=</span><span class="s4">5</span><span class="s3">, </span><span class="s1">scale</span><span class="s3">=</span><span class="s4">2</span><span class="s3">, </span><span class="s1">size</span><span class="s3">=</span><span class="s4">500</span><span class="s3">)</span>
+
+<span class="s0"># Initial guesses for mu and sigma</span>
+<span class="s1">initial_params </span><span class="s3">= [</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">]</span>
+
+<span class="s0"># Perform optimization</span>
+<span class="s1">results </span><span class="s3">= </span><span class="s1">minimize</span><span class="s3">(</span><span class="s1">negative_log_likelihood</span><span class="s3">, </span><span class="s1">initial_params</span><span class="s3">, </span><span class="s1">args</span><span class="s3">=(</span><span class="s1">data</span><span class="s3">,), </span><span class="s1">bounds</span><span class="s3">=[(</span><span class="s2">None</span><span class="s3">, </span><span class="s2">None</span><span class="s3">), (</span><span class="s4">1e-6</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)])</span>
+<span class="s1">mu_mle</span><span class="s3">, </span><span class="s1">sigma_mle </span><span class="s3">= </span><span class="s1">results</span><span class="s3">.</span><span class="s1">x</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated mu: </span><span class="s2">{</span><span class="s1">mu_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated sigma: </span><span class="s2">{</span><span class="s1">sigma_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s0"># Import necessary libraries</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">matplotlib</span><span class="s3">.</span><span class="s1">pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">integrate </span><span class="s2">import </span><span class="s1">quad</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">optimize </span><span class="s2">import </span><span class="s1">minimize</span>
+
+<span class="s0"># Define the normal distribution density function</span>
+<span class="s2">def </span><span class="s1">norm_den</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">):</span>
+    <span class="s1">coeff </span><span class="s3">= </span><span class="s4">1 </span><span class="s3">/ (</span><span class="s1">np</span><span class="s3">.</span><span class="s1">sqrt</span><span class="s3">(</span><span class="s4">2 </span><span class="s3">* </span><span class="s1">np</span><span class="s3">.</span><span class="s1">pi </span><span class="s3">* </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2</span><span class="s3">))</span>
+    <span class="s1">exponent </span><span class="s3">= -((</span><span class="s1">x </span><span class="s3">- </span><span class="s1">mu</span><span class="s3">)**</span><span class="s4">2</span><span class="s3">) / (</span><span class="s4">2 </span><span class="s3">* </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2</span><span class="s3">)</span>
+    <span class="s2">return </span><span class="s1">coeff </span><span class="s3">* </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s1">exponent</span><span class="s3">)</span>
+
+<span class="s0"># Visualize the function for selected mu and sigma</span>
+<span class="s1">x_values </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">linspace</span><span class="s3">(-</span><span class="s4">10</span><span class="s3">, </span><span class="s4">10</span><span class="s3">, </span><span class="s4">400</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s4">8</span><span class="s3">, </span><span class="s4">6</span><span class="s3">))</span>
+<span class="s2">for </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma </span><span class="s2">in </span><span class="s3">[(-</span><span class="s4">2</span><span class="s3">, </span><span class="s4">1</span><span class="s3">), (</span><span class="s4">0</span><span class="s3">, </span><span class="s4">2</span><span class="s3">), (</span><span class="s4">2</span><span class="s3">, </span><span class="s4">1</span><span class="s3">)]:</span>
+    <span class="s1">y_values </span><span class="s3">= </span><span class="s1">norm_den</span><span class="s3">(</span><span class="s1">x_values</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">)</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">plot</span><span class="s3">(</span><span class="s1">x_values</span><span class="s3">, </span><span class="s1">y_values</span><span class="s3">, </span><span class="s1">label</span><span class="s3">=</span><span class="s5">f'μ=</span><span class="s2">{</span><span class="s1">mu</span><span class="s2">}</span><span class="s5">, σ=</span><span class="s2">{</span><span class="s1">sigma</span><span class="s2">}</span><span class="s5">'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s5">'Normal Distribution Density Functions'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s5">'x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s5">'f(x)'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+
+<span class="s0"># Verify numerically that the integral over all x equals 1</span>
+<span class="s1">result</span><span class="s3">, </span><span class="s1">error </span><span class="s3">= </span><span class="s1">quad</span><span class="s3">(</span><span class="s1">norm_den</span><span class="s3">, -</span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span><span class="s3">, </span><span class="s1">args</span><span class="s3">=(</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">))</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Integral over all x: </span><span class="s2">{</span><span class="s1">result</span><span class="s2">:</span><span class="s5">.5f</span><span class="s2">}</span><span class="s5">, Error estimate: </span><span class="s2">{</span><span class="s1">error</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Implement MLE to estimate mu and sigma</span>
+<span class="s2">def </span><span class="s1">negative_log_likelihood</span><span class="s3">(</span><span class="s1">params</span><span class="s3">, </span><span class="s1">data</span><span class="s3">):</span>
+    <span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma </span><span class="s3">= </span><span class="s1">params</span><span class="s3">[</span><span class="s4">0</span><span class="s3">], </span><span class="s1">params</span><span class="s3">[</span><span class="s4">1</span><span class="s3">]</span>
+    <span class="s0"># To ensure sigma &gt; 0</span>
+    <span class="s2">if </span><span class="s1">sigma </span><span class="s3">&lt;= </span><span class="s4">0</span><span class="s3">:</span>
+        <span class="s2">return </span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span>
+    <span class="s1">nll </span><span class="s3">= -</span><span class="s1">np</span><span class="s3">.</span><span class="s1">sum</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">log</span><span class="s3">(</span><span class="s1">norm_den</span><span class="s3">(</span><span class="s1">data</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">)))</span>
+    <span class="s2">return </span><span class="s1">nll</span>
+
+<span class="s0"># Simulate data</span>
+<span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">seed</span><span class="s3">(</span><span class="s4">0</span><span class="s3">)</span>
+<span class="s1">data </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">normal</span><span class="s3">(</span><span class="s1">loc</span><span class="s3">=</span><span class="s4">5</span><span class="s3">, </span><span class="s1">scale</span><span class="s3">=</span><span class="s4">2</span><span class="s3">, </span><span class="s1">size</span><span class="s3">=</span><span class="s4">500</span><span class="s3">)</span>
+
+<span class="s0"># Initial guesses for mu and sigma</span>
+<span class="s1">initial_params </span><span class="s3">= [</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">]</span>
+
+<span class="s0"># Perform optimization</span>
+<span class="s1">results </span><span class="s3">= </span><span class="s1">minimize</span><span class="s3">(</span><span class="s1">negative_log_likelihood</span><span class="s3">, </span><span class="s1">initial_params</span><span class="s3">, </span><span class="s1">args</span><span class="s3">=(</span><span class="s1">data</span><span class="s3">,), </span><span class="s1">bounds</span><span class="s3">=[(</span><span class="s2">None</span><span class="s3">, </span><span class="s2">None</span><span class="s3">), (</span><span class="s4">1e-6</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)])</span>
+<span class="s1">mu_mle</span><span class="s3">, </span><span class="s1">sigma_mle </span><span class="s3">= </span><span class="s1">results</span><span class="s3">.</span><span class="s1">x</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated mu: </span><span class="s2">{</span><span class="s1">mu_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated sigma: </span><span class="s2">{</span><span class="s1">sigma_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">## Problem 3: Implement the MLEs for the Negative Binomial Distribution 
+ 
+### Problem Description   
+The probability mass function of the negative binomial distribution is given by: 
+ 
+\\[ 
+f(x|\\mu, \\phi) = \\frac{\\Gamma(x + \\phi^{-1})}{\\Gamma(\\phi^{-1})\\Gamma(x + 1)} \\left( \\frac{\\phi^{-1}}{\\mu + \\phi^{-1}} \\right)^{1/\\phi} \\left( \\frac{\\mu}{\\mu + \\phi^{-1}} \\right)^x 
+\\] 
+ 
+- Implement a function to evaluate the mass function. 
+- Perform MLE to estimate \\( \\mu \\) and \\( \\phi \\). 
+ 
+ 
+</span><span class="s0">#%% 
+# Import necessary libraries</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">matplotlib</span><span class="s3">.</span><span class="s1">pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">special </span><span class="s2">import </span><span class="s1">gamma</span><span class="s3">, </span><span class="s1">gammaln</span><span class="s3">, </span><span class="s1">digamma</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">optimize </span><span class="s2">import </span><span class="s1">minimize</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">stats </span><span class="s2">import </span><span class="s1">nbinom</span>
+
+<span class="s0"># Define the negative binomial mass function</span>
+<span class="s2">def </span><span class="s1">nbin_mass_function</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">phi</span><span class="s3">):</span>
+    <span class="s1">r </span><span class="s3">= </span><span class="s4">1 </span><span class="s3">/ </span><span class="s1">phi</span>
+    <span class="s1">p </span><span class="s3">= </span><span class="s1">r </span><span class="s3">/ (</span><span class="s1">r </span><span class="s3">+ </span><span class="s1">mu</span><span class="s3">)</span>
+    <span class="s1">coeff </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s1">gammaln</span><span class="s3">(</span><span class="s1">x </span><span class="s3">+ </span><span class="s1">r</span><span class="s3">) - </span><span class="s1">gammaln</span><span class="s3">(</span><span class="s1">r</span><span class="s3">) - </span><span class="s1">gammaln</span><span class="s3">(</span><span class="s1">x </span><span class="s3">+ </span><span class="s4">1</span><span class="s3">))</span>
+    <span class="s1">prob </span><span class="s3">= </span><span class="s1">coeff </span><span class="s3">* (</span><span class="s1">p</span><span class="s3">**</span><span class="s1">r</span><span class="s3">) * ((</span><span class="s4">1 </span><span class="s3">- </span><span class="s1">p</span><span class="s3">)**</span><span class="s1">x</span><span class="s3">)</span>
+    <span class="s2">return </span><span class="s1">prob</span>
+
+<span class="s0"># Visualize the distribution for different mu and phi</span>
+<span class="s1">x_values </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">arange</span><span class="s3">(</span><span class="s4">0</span><span class="s3">, </span><span class="s4">50</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s4">8</span><span class="s3">, </span><span class="s4">6</span><span class="s3">))</span>
+<span class="s2">for </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">phi </span><span class="s2">in </span><span class="s3">[(</span><span class="s4">10</span><span class="s3">, </span><span class="s4">0.5</span><span class="s3">), (</span><span class="s4">15</span><span class="s3">, </span><span class="s4">1</span><span class="s3">), (</span><span class="s4">20</span><span class="s3">, </span><span class="s4">2</span><span class="s3">)]:</span>
+    <span class="s1">pmf_values </span><span class="s3">= </span><span class="s1">nbin_mass_function</span><span class="s3">(</span><span class="s1">x_values</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">phi</span><span class="s3">)</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">plot</span><span class="s3">(</span><span class="s1">x_values</span><span class="s3">, </span><span class="s1">pmf_values</span><span class="s3">, </span><span class="s1">label</span><span class="s3">=</span><span class="s5">f'μ=</span><span class="s2">{</span><span class="s1">mu</span><span class="s2">}</span><span class="s5">, ϕ=</span><span class="s2">{</span><span class="s1">phi</span><span class="s2">}</span><span class="s5">'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s5">'Negative Binomial Distribution PMFs'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s5">'x'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s5">'Probability'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+
+<span class="s0"># Implement MLE to estimate mu and phi</span>
+<span class="s2">def </span><span class="s1">negative_log_likelihood_nbin</span><span class="s3">(</span><span class="s1">params</span><span class="s3">, </span><span class="s1">data</span><span class="s3">):</span>
+    <span class="s1">mu</span><span class="s3">, </span><span class="s1">phi </span><span class="s3">= </span><span class="s1">params</span><span class="s3">[</span><span class="s4">0</span><span class="s3">], </span><span class="s1">params</span><span class="s3">[</span><span class="s4">1</span><span class="s3">]</span>
+    <span class="s2">if </span><span class="s1">mu </span><span class="s3">&lt;= </span><span class="s4">0 </span><span class="s2">or </span><span class="s1">phi </span><span class="s3">&lt;= </span><span class="s4">0</span><span class="s3">:</span>
+        <span class="s2">return </span><span class="s1">np</span><span class="s3">.</span><span class="s1">inf</span>
+    <span class="s1">nll </span><span class="s3">= -</span><span class="s1">np</span><span class="s3">.</span><span class="s1">sum</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">log</span><span class="s3">(</span><span class="s1">nbin_mass_function</span><span class="s3">(</span><span class="s1">data</span><span class="s3">, </span><span class="s1">mu</span><span class="s3">, </span><span class="s1">phi</span><span class="s3">)))</span>
+    <span class="s2">return </span><span class="s1">nll</span>
+
+<span class="s0"># Simulate data from a negative binomial distribution</span>
+<span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">seed</span><span class="s3">(</span><span class="s4">0</span><span class="s3">)</span>
+<span class="s1">mu_true </span><span class="s3">= </span><span class="s4">15</span>
+<span class="s1">phi_true </span><span class="s3">= </span><span class="s4">0.8</span>
+<span class="s1">r_true </span><span class="s3">= </span><span class="s4">1 </span><span class="s3">/ </span><span class="s1">phi_true</span>
+<span class="s1">p_true </span><span class="s3">= </span><span class="s1">r_true </span><span class="s3">/ (</span><span class="s1">r_true </span><span class="s3">+ </span><span class="s1">mu_true</span><span class="s3">)</span>
+<span class="s1">data </span><span class="s3">= </span><span class="s1">nbinom</span><span class="s3">.</span><span class="s1">rvs</span><span class="s3">(</span><span class="s1">r_true</span><span class="s3">, </span><span class="s1">p_true</span><span class="s3">, </span><span class="s1">size</span><span class="s3">=</span><span class="s4">500</span><span class="s3">)</span>
+
+<span class="s0"># Initial guesses for mu and phi</span>
+<span class="s1">initial_params </span><span class="s3">= [</span><span class="s4">10</span><span class="s3">, </span><span class="s4">1</span><span class="s3">]</span>
+
+<span class="s0"># Perform optimization</span>
+<span class="s1">results </span><span class="s3">= </span><span class="s1">minimize</span><span class="s3">(</span><span class="s1">negative_log_likelihood_nbin</span><span class="s3">, </span><span class="s1">initial_params</span><span class="s3">, </span><span class="s1">args</span><span class="s3">=(</span><span class="s1">data</span><span class="s3">,), </span><span class="s1">bounds</span><span class="s3">=[(</span><span class="s4">1e-6</span><span class="s3">, </span><span class="s2">None</span><span class="s3">), (</span><span class="s4">1e-6</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)])</span>
+<span class="s1">mu_mle</span><span class="s3">, </span><span class="s1">phi_mle </span><span class="s3">= </span><span class="s1">results</span><span class="s3">.</span><span class="s1">x</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated mu: </span><span class="s2">{</span><span class="s1">mu_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated phi: </span><span class="s2">{</span><span class="s1">phi_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Validate implementation by comparing with sample mean and variance</span>
+<span class="s1">sample_mean </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">mean</span><span class="s3">(</span><span class="s1">data</span><span class="s3">)</span>
+<span class="s1">sample_var </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">var</span><span class="s3">(</span><span class="s1">data</span><span class="s3">)</span>
+<span class="s1">phi_est </span><span class="s3">= (</span><span class="s1">sample_var </span><span class="s3">- </span><span class="s1">sample_mean</span><span class="s3">) / </span><span class="s1">sample_mean</span><span class="s3">**</span><span class="s4">2</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Sample mean: </span><span class="s2">{</span><span class="s1">sample_mean</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Sample variance: </span><span class="s2">{</span><span class="s1">sample_var</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Method of moments estimate for phi: </span><span class="s2">{</span><span class="s1">phi_est</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">## Problem 4: Fisher’s Information 
+ 
+### Problem Description   
+Simulate data from a normal distribution and derive the Fisher information matrix for the parameters \( \alpha \), \( \beta \), and \( \sigma \). Use this matrix to compute the standard errors of the MLEs and compare them with those obtained using `statsmodels`. 
+ 
+### Implementation   
+*See the code cell below for implementation.* 
+</span><span class="s0">#%% 
+# Import necessary libraries</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">stats </span><span class="s2">import </span><span class="s1">norm</span>
+<span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span class="s1">inv</span>
+<span class="s2">import </span><span class="s1">statsmodels</span><span class="s3">.</span><span class="s1">api </span><span class="s2">as </span><span class="s1">sm</span>
+
+<span class="s0"># Generate dataset</span>
+<span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">seed</span><span class="s3">(</span><span class="s4">0</span><span class="s3">)</span>
+<span class="s1">n </span><span class="s3">= </span><span class="s4">1000</span>
+<span class="s1">x </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">normal</span><span class="s3">(</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">, </span><span class="s1">n</span><span class="s3">)</span>
+<span class="s1">alpha_true </span><span class="s3">= </span><span class="s4">2</span>
+<span class="s1">beta_true </span><span class="s3">= </span><span class="s4">3</span>
+<span class="s1">sigma_true </span><span class="s3">= </span><span class="s4">1</span>
+
+<span class="s0"># Simulate response variable y</span>
+<span class="s1">epsilon </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">random</span><span class="s3">.</span><span class="s1">normal</span><span class="s3">(</span><span class="s4">0</span><span class="s3">, </span><span class="s1">sigma_true</span><span class="s3">, </span><span class="s1">n</span><span class="s3">)</span>
+<span class="s1">y </span><span class="s3">= </span><span class="s1">alpha_true </span><span class="s3">+ </span><span class="s1">beta_true </span><span class="s3">* </span><span class="s1">x </span><span class="s3">+ </span><span class="s1">epsilon</span>
+
+<span class="s0"># Define the Fisher Information matrix function</span>
+<span class="s2">def </span><span class="s1">fisher_information</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">sigma</span><span class="s3">):</span>
+    <span class="s1">n </span><span class="s3">= </span><span class="s1">len</span><span class="s3">(</span><span class="s1">x</span><span class="s3">)</span>
+    <span class="s1">I </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">zeros</span><span class="s3">((</span><span class="s4">3</span><span class="s3">, </span><span class="s4">3</span><span class="s3">))</span>
+    <span class="s1">I</span><span class="s3">[</span><span class="s4">0</span><span class="s3">, </span><span class="s4">0</span><span class="s3">] = </span><span class="s1">n </span><span class="s3">/ </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2  </span><span class="s0"># ∂²l/∂α²</span>
+    <span class="s1">I</span><span class="s3">[</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">] = </span><span class="s1">np</span><span class="s3">.</span><span class="s1">sum</span><span class="s3">(</span><span class="s1">x</span><span class="s3">) / </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2  </span><span class="s0"># ∂²l/∂α∂β</span>
+    <span class="s1">I</span><span class="s3">[</span><span class="s4">1</span><span class="s3">, </span><span class="s4">0</span><span class="s3">] = </span><span class="s1">I</span><span class="s3">[</span><span class="s4">0</span><span class="s3">, </span><span class="s4">1</span><span class="s3">]  </span><span class="s0"># Symmetry</span>
+    <span class="s1">I</span><span class="s3">[</span><span class="s4">1</span><span class="s3">, </span><span class="s4">1</span><span class="s3">] = </span><span class="s1">np</span><span class="s3">.</span><span class="s1">sum</span><span class="s3">(</span><span class="s1">x</span><span class="s3">**</span><span class="s4">2</span><span class="s3">) / </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2  </span><span class="s0"># ∂²l/∂β²</span>
+    <span class="s1">I</span><span class="s3">[</span><span class="s4">2</span><span class="s3">, </span><span class="s4">2</span><span class="s3">] = </span><span class="s1">n </span><span class="s3">/ (</span><span class="s4">2 </span><span class="s3">* </span><span class="s1">sigma</span><span class="s3">**</span><span class="s4">2</span><span class="s3">)  </span><span class="s0"># ∂²l/∂σ²</span>
+    <span class="s2">return </span><span class="s1">I</span>
+
+<span class="s0"># Estimate parameters using MLE</span>
+<span class="s1">X </span><span class="s3">= </span><span class="s1">sm</span><span class="s3">.</span><span class="s1">add_constant</span><span class="s3">(</span><span class="s1">x</span><span class="s3">)</span>
+<span class="s1">model </span><span class="s3">= </span><span class="s1">sm</span><span class="s3">.</span><span class="s1">OLS</span><span class="s3">(</span><span class="s1">y</span><span class="s3">, </span><span class="s1">X</span><span class="s3">).</span><span class="s1">fit</span><span class="s3">()</span>
+<span class="s1">alpha_mle</span><span class="s3">, </span><span class="s1">beta_mle </span><span class="s3">= </span><span class="s1">model</span><span class="s3">.</span><span class="s1">params</span>
+<span class="s1">sigma_mle </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">sqrt</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">sum</span><span class="s3">((</span><span class="s1">y </span><span class="s3">- </span><span class="s1">model</span><span class="s3">.</span><span class="s1">predict</span><span class="s3">(</span><span class="s1">X</span><span class="s3">))**</span><span class="s4">2</span><span class="s3">) / </span><span class="s1">n</span><span class="s3">)</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated α: </span><span class="s2">{</span><span class="s1">alpha_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated β: </span><span class="s2">{</span><span class="s1">beta_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;Estimated σ: </span><span class="s2">{</span><span class="s1">sigma_mle</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Compute Fisher Information matrix at estimated parameters</span>
+<span class="s1">I </span><span class="s3">= </span><span class="s1">fisher_information</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">sigma_mle</span><span class="s3">)</span>
+<span class="s0"># Since σ appears only in diagonal terms, we can adjust the matrix</span>
+<span class="s1">I</span><span class="s3">[</span><span class="s4">0</span><span class="s3">, </span><span class="s4">2</span><span class="s3">] = </span><span class="s1">I</span><span class="s3">[</span><span class="s4">2</span><span class="s3">, </span><span class="s4">0</span><span class="s3">] = </span><span class="s4">0  </span><span class="s0"># ∂²l/∂α∂σ</span>
+<span class="s1">I</span><span class="s3">[</span><span class="s4">1</span><span class="s3">, </span><span class="s4">2</span><span class="s3">] = </span><span class="s1">I</span><span class="s3">[</span><span class="s4">2</span><span class="s3">, </span><span class="s4">1</span><span class="s3">] = </span><span class="s4">0  </span><span class="s0"># ∂²l/∂β∂σ</span>
+
+<span class="s0"># Compute the variance-covariance matrix (inverse of Fisher Information)</span>
+<span class="s1">var_covar_matrix </span><span class="s3">= </span><span class="s1">inv</span><span class="s3">(</span><span class="s1">I</span><span class="s3">)</span>
+
+<span class="s0"># Standard errors are the square roots of the diagonal elements</span>
+<span class="s1">std_errors </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">sqrt</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">diag</span><span class="s3">(</span><span class="s1">var_covar_matrix</span><span class="s3">))</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s5">&quot;</span><span class="s2">\n</span><span class="s5">Standard Errors from Fisher Information:&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;SE(α): </span><span class="s2">{</span><span class="s1">std_errors</span><span class="s3">[</span><span class="s4">0</span><span class="s3">]</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;SE(β): </span><span class="s2">{</span><span class="s1">std_errors</span><span class="s3">[</span><span class="s4">1</span><span class="s3">]</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;SE(σ): </span><span class="s2">{</span><span class="s1">std_errors</span><span class="s3">[</span><span class="s4">2</span><span class="s3">]</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Compare with standard errors from statsmodels</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">&quot;</span><span class="s2">\n</span><span class="s5">Standard Errors from statsmodels:&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;SE(α): </span><span class="s2">{</span><span class="s1">model</span><span class="s3">.</span><span class="s1">bse</span><span class="s3">[</span><span class="s4">0</span><span class="s3">]</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;SE(β): </span><span class="s2">{</span><span class="s1">model</span><span class="s3">.</span><span class="s1">bse</span><span class="s3">[</span><span class="s4">1</span><span class="s3">]</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0"># For σ, statsmodels does not directly provide SE, but we can estimate it</span>
+<span class="s1">sigma_se </span><span class="s3">= </span><span class="s1">sigma_mle </span><span class="s3">/ </span><span class="s1">np</span><span class="s3">.</span><span class="s1">sqrt</span><span class="s3">(</span><span class="s4">2 </span><span class="s3">* </span><span class="s1">n</span><span class="s3">)</span>
+<span class="s1">print</span><span class="s3">(</span><span class="s5">f&quot;SE(σ): </span><span class="s2">{</span><span class="s1">sigma_se</span><span class="s2">:</span><span class="s5">.4f</span><span class="s2">}</span><span class="s5">&quot;</span><span class="s3">)</span>
+
+<span class="s0">#%% 
+</span></pre>
+</body>
+</html>
